@@ -4,7 +4,7 @@ const RGB_SCHEME: u32 = 1;
 const HSV_SCHEME: u32 = 2;
 
 struct Params {
-    center: vec4f,
+    center: vec4f, // 2 points
     max_iter: u32,
     zoom: f32,
     rgb_green: f32,
@@ -12,6 +12,7 @@ struct Params {
     color_scheme: u32,
     hsv_saturation: f32,
     hsv_brightness: f32,
+    initial_value: vec4f // 2 points
 }
 
 struct Complex {
@@ -32,7 +33,7 @@ fn sum(c1: Complex, c2: Complex) -> Complex {
 }
 
 fn escape_time(c: Complex, limit: u32) -> i32 {
-    var z = Complex(0.0, 0.0);
+    var z = Complex(params.initial_value.x, params.initial_value.y);
     let l = i32(limit);
     for (var i: i32 = 0; i < l; i++) {
         let z_sqrt = norm_sqr(z);

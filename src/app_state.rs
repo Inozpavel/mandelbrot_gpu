@@ -1,5 +1,4 @@
 use crate::uniforms::Uniforms;
-use bytemuck::{Pod, Zeroable};
 use wgpu::wgt::BufferDescriptor;
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,

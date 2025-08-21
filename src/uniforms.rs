@@ -14,6 +14,7 @@ pub struct Uniforms {
     pub hsv_saturation: f32,
     pub hsv_brightness: f32,
     pub _pad1: [u8; 4],
+    pub initial_value: [f32; 4], // 2 points, 16
 }
 
 bitflags! {
@@ -35,7 +36,7 @@ impl Display for FractalColorScheme {
             parts.push("HSV");
         }
 
-        if parts.len() == 0 {
+        if parts.is_empty() {
             write!(f, "(none)")
         } else {
             write!(f, "{}", parts.join(" | "))

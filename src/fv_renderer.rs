@@ -1,6 +1,6 @@
 use crate::app_state::AppState;
 use crate::fv_render_callback::FvRenderCallback;
-use wgpu::{Queue, RenderPass, RenderPipeline};
+use wgpu::{Queue, RenderPass};
 
 pub struct FvRenderer {
     pub state: AppState,
@@ -8,9 +8,6 @@ pub struct FvRenderer {
 
 impl FvRenderer {
     pub fn prepare(&mut self, queue: &Queue, callback: &FvRenderCallback) {
-        // if let Some(data) = &callback.shader_recompilation_options {
-        //     self.pipeline = self.state.generate_pipeline(data);
-        // }
         queue.write_buffer(
             &self.state.uniform_buffer,
             0,

@@ -25,7 +25,7 @@ impl CallbackTrait for FvRenderCallback {
 
     fn paint(
         &self,
-        info: PaintCallbackInfo,
+        _info: PaintCallbackInfo,
         render_pass: &mut RenderPass<'static>,
         callback_resources: &CallbackResources,
     ) {

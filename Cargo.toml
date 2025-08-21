@@ -4,14 +4,14 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-env_logger = "0.11.8"
 anyhow = "1.0.99"
-wgpu = { version = "25.0.2", features = ["webgpu", "webgl"] }
-pollster = "0.4.0"
-#tokio = "1.47.1"
+bitflags = "2.9.2"
 bytemuck = "1.23.2"
+eframe = { version = "0.32.1", features = ["wgpu"] }
 egui = "0.32.1"
 egui-wgpu = "0.32.1"
-eframe = { version = "0.32.1", features = ["wgpu", ] }
-naga = "25.0.1"
-bitflags = "2.9.2"
+env_logger = "0.11.8"
+log = "0.4.27"
+measure_time = "0.9.0"
+pollster = "0.4.0"
+wgpu = { version = "25.0.2", features = ["webgpu"] }

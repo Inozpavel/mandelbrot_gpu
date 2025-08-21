@@ -1,3 +1,4 @@
+use crate::uniforms::Uniforms;
 use bytemuck::{Pod, Zeroable};
 use wgpu::wgt::BufferDescriptor;
 use wgpu::{
@@ -12,14 +13,6 @@ pub struct AppState {
     pub pipeline: RenderPipeline,
     pub uniform_buffer: Buffer,
     pub format: TextureFormat,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Pod, Zeroable)]
-pub struct Uniforms {
-    pub limit: u32,
-    pub _padding: [u8; 4],
-    pub center: [f32; 2],
 }
 
 impl AppState {

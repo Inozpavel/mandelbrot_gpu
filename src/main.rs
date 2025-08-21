@@ -5,7 +5,7 @@ use mandelbrot_gpu::fractal_app::FractalApp;
 fn main() -> Result<(), eframe::Error> {
     env_logger::init();
 
-    let width = 900.0;
+    let width = 1200.0;
     let height = width / 1.5;
     let options = NativeOptions {
         viewport: ViewportBuilder::default()
@@ -17,7 +17,7 @@ fn main() -> Result<(), eframe::Error> {
     };
 
     eframe::run_native(
-        "mandelbrot wgpu",
+        "Mandelbrot wgpu",
         options,
         Box::new(|cc| Ok(Box::new(FractalApp::new(cc)))),
     )?;

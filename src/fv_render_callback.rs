@@ -1,5 +1,5 @@
-use crate::app_state::Uniforms;
 use crate::fv_renderer::FvRenderer;
+use crate::uniforms::Uniforms;
 use eframe::epaint::PaintCallbackInfo;
 use egui_wgpu::wgpu::RenderPass;
 use egui_wgpu::{CallbackResources, CallbackTrait, ScreenDescriptor};

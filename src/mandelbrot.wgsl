@@ -1,8 +1,17 @@
 @group(0) @binding(0) var <uniform> params: Params;
 
+const RGB_SCHEME: u32 = 1;
+const HSV_SCHEME: u32 = 2;
+
 struct Params {
+    center: vec4f,
     max_iter: u32,
-    center: vec2f
+    zoom: f32,
+    rgb_green: f32,
+    rgb_blue: f32,
+    color_scheme: u32,
+    hsv_saturation: f32,
+    hsv_brightness: f32,
 }
 
 struct Complex {
@@ -34,12 +43,47 @@ fn escape_time(c: Complex, limit: u32) -> i32 {
 
         z = sum(mul(z, z), c);
     }
-    return 255;
+    return -1;
 }
 
 struct VsOut {
     @builtin(position) position: vec4f,
     @location(0) uv: vec2<f32>
+}
+
+fn hsv_rgb(hsv: vec3<f32>) -> vec3<f32> {
+    if (hsv.y == 0.0) {
+        return vec3<f32>(hsv.z, hsv.z, hsv.z);
+    } else {
+        var hp: f32 = hsv.x * 6.0;
+        if (hp == 6.0) {
+            hp = 0.0;
+        }
+        let hpi: i32 = i32(hp);
+        let v1: f32 = hsv.z * (1.0 - hsv.y);
+        let v2: f32 = hsv.z * (1.0 - hsv.y * (hp - f32(hpi)));
+        let v3: f32 = hsv.z * (1.0 - hsv.y * (1.0 - (hp - f32(hpi))));
+        switch (hpi) {
+            case 0: {
+                return vec3<f32>(hsv.z, v3, v1);
+            }
+            case 1: {
+                return vec3<f32>(v2, hsv.z, v1);
+            }
+            case 2: {
+                return vec3<f32>(v1, hsv.z, v3);
+            }
+            case 3: {
+                return vec3<f32>(v1, v2, hsv.z);
+            }
+            case 4: {
+                return vec3<f32>(v3, v1, hsv.z);
+            }
+            default: {
+                return vec3<f32>(hsv.z, v1, v2);
+            }
+        }
+    }
 }
 
 @vertex
@@ -63,13 +107,26 @@ fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
     let center = Complex(params.center.x, params.center.y);
- let scale = 2.0;
-    let x = (in.uv.x - 0.5) * scale * 3.0; // расширяем по x
-    let y = (in.uv.y - 0.5) * scale * 2.0; // расширяем по y
+    let scale = params.zoom;
+    let x = (in.uv.x  - 0.5) / scale * 3.0;
+    let y = (in.uv.y  - 0.5) / scale * 2.0;
     let current_point = Complex(x, y);
     let c = sum(center, current_point);
 
     let time = escape_time(c, params.max_iter);
-    let col = f32(time) / f32(params.max_iter);
-    return vec4f(col, col, col, 1.0);
+
+    if (time == -1) {
+        return vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
+    if ((params.color_scheme & HSV_SCHEME) > 0) {
+        let color = log(f32(time) + 1) / log(f32(params.max_iter) + 1);
+        let colors = vec3f(color, params.hsv_saturation, params.hsv_brightness);
+        return vec4f(hsv_rgb(colors), 1.0);
+    }
+    else {
+        let color = f32(time) / f32(params.max_iter);
+        let colors = vec3f(color, params.rgb_green, params.rgb_blue);
+        return vec4f(colors, 1.0);
+    }
 }

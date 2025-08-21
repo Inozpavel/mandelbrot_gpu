@@ -253,7 +253,11 @@ impl eframe::App for FractalApp {
                                     self.settings.initial_value_y = 0.0;
                                 }
                             });
-                            ui.end_row()
+                            ui.end_row();
+
+                            ui.heading("Показывать оси");
+                            ui.checkbox(&mut self.settings.show_axis, "");
+                            ui.end_row();
                         });
                 });
 
@@ -301,7 +305,8 @@ impl FractalApp {
             color_scheme: self.settings.color_scheme.bits(),
             hsv_saturation: self.settings.hsv_saturation,
             hsv_brightness: self.settings.hsv_brightness,
-            _pad1: [0; 4],
+            show_axis: self.settings.show_axis as u8 as u32,
+            // _pad1: [0; 3],
             initial_value: [
                 self.settings.initial_value_x,
                 self.settings.initial_value_y,

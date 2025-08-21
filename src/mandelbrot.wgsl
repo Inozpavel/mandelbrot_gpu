@@ -3,8 +3,12 @@
 const RGB_SCHEME: u32 = 1;
 const HSV_SCHEME: u32 = 2;
 
+const EPSILON: f32 = 0.001;
+const AXIS_EPSILON: f32 = 0.005;
+
 struct Params {
     center: vec4f, // 2 points
+    initial_value: vec4f, // 2 points
     max_iter: u32,
     zoom: f32,
     rgb_green: f32,
@@ -12,7 +16,7 @@ struct Params {
     color_scheme: u32,
     hsv_saturation: f32,
     hsv_brightness: f32,
-    initial_value: vec4f // 2 points
+    show_axis: u32,
 }
 
 struct Complex {
@@ -111,8 +115,25 @@ fn fs_main(in: VsOut) -> @location(0) vec4f {
     let scale = params.zoom;
     let x = (in.uv.x  - 0.5) / scale * 3.0;
     let y = (in.uv.y  - 0.5) / scale * 2.0;
+
     let current_point = Complex(x, y);
     let c = sum(center, current_point);
+
+    if ((params.show_axis & 1) > 0) {
+        let scaled_epsilon = EPSILON / scale;
+        let scaled_axis_epsilon = AXIS_EPSILON / scale;
+        let axis_epsilon = scaled_epsilon * 25;
+
+        if (abs(c.im) >= axis_epsilon && abs(abs(c.im) - abs(floor(c.im))) <= scaled_axis_epsilon && abs(c.re) <= axis_epsilon) {
+            return vec4f(255, 255, 255, 0);
+        }
+        if (abs(c.re) >= axis_epsilon && abs(abs(c.re) - abs(floor(c.re))) <= scaled_axis_epsilon && abs(c.im) <= axis_epsilon) {
+            return vec4f(255, 255, 255, 0);
+        }
+        if (abs(c.re) <= scaled_epsilon || abs(c.im) <= scaled_epsilon) {
+            return vec4f(255, 255, 255, 0);
+        }
+    }
 
     let time = escape_time(c, params.max_iter);
 

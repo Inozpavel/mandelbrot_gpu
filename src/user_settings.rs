@@ -13,6 +13,7 @@ pub struct UserSettings {
     pub hsv_saturation: f32,
     pub hsv_brightness: f32,
     pub show_settings: bool,
+    pub show_axis: bool,
 }
 
 impl UserSettings {
@@ -30,6 +31,7 @@ impl UserSettings {
             hsv_saturation: 1.0,
             hsv_brightness: 1.0,
             show_settings: true,
+            show_axis: false,
         }
     }
 }

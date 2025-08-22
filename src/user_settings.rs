@@ -14,6 +14,7 @@ pub struct UserSettings {
     pub hsv_brightness: f32,
     pub show_settings: bool,
     pub show_axis: bool,
+    pub escape_threshold: f32,
 }
 
 impl UserSettings {
@@ -32,6 +33,7 @@ impl UserSettings {
             hsv_brightness: 1.0,
             show_settings: true,
             show_axis: false,
+            escape_threshold: 4.0,
         }
     }
 }

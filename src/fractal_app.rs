@@ -140,6 +140,14 @@ impl eframe::App for FractalApp {
 
                             ui.end_row();
 
+                            ui.heading("Граница проверки");
+                            DragValue::new(&mut self.settings.escape_threshold)
+                                .speed(1.0)
+                                .range(1.0..=255.0)
+                                .ui(ui);
+
+                            ui.end_row();
+
                             ui.heading("Центр");
                             ui.horizontal(|ui| {
                                 DragValue::new(&mut self.settings.center_x)
@@ -306,13 +314,14 @@ impl FractalApp {
             hsv_saturation: self.settings.hsv_saturation,
             hsv_brightness: self.settings.hsv_brightness,
             show_axis: self.settings.show_axis as u8 as u32,
-            // _pad1: [0; 3],
+            escape_threshold: self.settings.escape_threshold,
             initial_value: [
                 self.settings.initial_value_x,
                 self.settings.initial_value_y,
                 0.0,
                 0.0,
             ],
+            pad: [0; 12],
         };
         let callback = FvRenderCallback { uniforms };
 

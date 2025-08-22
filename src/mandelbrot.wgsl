@@ -17,6 +17,7 @@ struct Params {
     hsv_saturation: f32,
     hsv_brightness: f32,
     show_axis: u32,
+    escape_threshold: f32,
 }
 
 struct Complex {
@@ -42,7 +43,7 @@ fn escape_time(c: Complex, limit: u32) -> i32 {
     for (var i: i32 = 0; i < l; i++) {
         let z_sqrt = norm_sqr(z);
 
-        if z_sqrt > 4.0 {
+        if z_sqrt > params.escape_threshold {
             return i;
         }
 

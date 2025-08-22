@@ -5,16 +5,18 @@ use std::fmt::Display;
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 pub struct Uniforms {
-    pub center: [f32; 4],  // 2 points, 16
+    pub center: [f32; 4],        // 2 points, 16
     pub initial_value: [f32; 4], // 2 points, 16
-    pub max_iter: u32,     // 4
-    pub zoom: f32,         // 4
-    pub rgb_green: f32,    // 4
-    pub rgb_blue: f32,     // 4
-    pub color_scheme: u32, // 4
-    pub hsv_saturation: f32, // 4
-    pub hsv_brightness: f32, // 4
-    pub show_axis: u32, // 4
+    pub max_iter: u32,           // 4
+    pub zoom: f32,               // 4
+    pub rgb_green: f32,          // 4
+    pub rgb_blue: f32,           // 4
+    pub color_scheme: u32,       // 4
+    pub hsv_saturation: f32,     // 4
+    pub hsv_brightness: f32,     // 4
+    pub show_axis: u32,          // 4
+    pub escape_threshold: f32,   // 4
+    pub pad: [u8; 12],           // 4
 }
 
 bitflags! {

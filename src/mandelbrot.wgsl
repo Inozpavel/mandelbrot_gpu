@@ -6,6 +6,9 @@ const HSV_SCHEME: u32 = 2;
 const EPSILON: f32 = 0.001;
 const AXIS_EPSILON: f32 = 0.005;
 
+const JULIA_FRACTAL_TYPE: u32 = 2;
+const MANDELBROT_FRACTAL_TYPE: u32 = 1;
+
 struct Params {
     center: vec4f, // 2 points
     initial_value: vec4f, // 2 points
@@ -18,6 +21,7 @@ struct Params {
     hsv_brightness: f32,
     show_axis: u32,
     escape_threshold: f32,
+    fractal_type: u32
 }
 
 struct Complex {
@@ -38,7 +42,14 @@ fn sum(c1: Complex, c2: Complex) -> Complex {
 }
 
 fn escape_time(c: Complex, limit: u32) -> i32 {
-    var z = Complex(params.initial_value.x, params.initial_value.y);
+    let constant = Complex(params.initial_value.x, params.initial_value.y);
+    var z: Complex;
+
+    if ((params.fractal_type & JULIA_FRACTAL_TYPE) > 0) {
+        z = c;
+    } else {
+        z = constant;
+    }
     let l = i32(limit);
     for (var i: i32 = 0; i < l; i++) {
         let z_sqrt = norm_sqr(z);
@@ -47,7 +58,11 @@ fn escape_time(c: Complex, limit: u32) -> i32 {
             return i;
         }
 
-        z = sum(mul(z, z), c);
+        if ((params.fractal_type & JULIA_FRACTAL_TYPE) > 0) {
+            z = sum(mul(z, z), constant);
+        } else {
+            z = sum(mul(z, z), c);
+        }
     }
     return -1;
 }

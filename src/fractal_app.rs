@@ -1,12 +1,10 @@
 use crate::app_state::AppState;
 use crate::fv_render_callback::FvRenderCallback;
 use crate::fv_renderer::FvRenderer;
-use crate::uniforms::{FractalColorScheme, Uniforms};
+use crate::uniforms::{FractalColorScheme, FractalType, Uniforms};
 use crate::user_settings::UserSettings;
 use eframe::{CreationContext, Frame};
-use egui::{
-    ComboBox, Context, DragValue, Grid, Key, PointerButton, Slider, Ui, ViewportCommand, Widget,
-};
+use egui::{Context, DragValue, Grid, Key, PointerButton, Slider, Ui, ViewportCommand, Widget};
 use log::info;
 use measure_time::debug_time;
 use std::time::Instant;
@@ -132,6 +130,23 @@ impl eframe::App for FractalApp {
                         .striped(true)
                         .spacing([10.0, 4.0])
                         .show(ui, |ui| {
+                            ui.heading("Тип фрактала");
+
+                            ui.horizontal(|ui| {
+                                ui.selectable_value(
+                                    &mut self.settings.fractal_type,
+                                    FractalType::MANDELBROT,
+                                    FractalType::MANDELBROT.to_string(),
+                                );
+                                ui.selectable_value(
+                                    &mut self.settings.fractal_type,
+                                    FractalType::JULIA,
+                                    FractalType::JULIA.to_string(),
+                                );
+                            });
+
+                            ui.end_row();
+
                             ui.heading("Количество итераций");
                             DragValue::new(&mut self.settings.max_iter)
                                 .speed(1)
@@ -182,20 +197,20 @@ impl eframe::App for FractalApp {
                             ui.vertical(|ui| {
                                 ui.horizontal(|ui| {
                                     ui.label("Текущая");
-                                    ComboBox::from_label("")
-                                        .selected_text(format!("{}", self.settings.color_scheme))
-                                        .show_ui(ui, |ui| {
-                                            ui.selectable_value(
-                                                &mut self.settings.color_scheme,
-                                                FractalColorScheme::RGB,
-                                                "RGB",
-                                            );
-                                            ui.selectable_value(
-                                                &mut self.settings.color_scheme,
-                                                FractalColorScheme::HSV,
-                                                "HSV",
-                                            );
-                                        });
+
+                                    ui.horizontal(|ui| {
+                                        ui.selectable_value(
+                                            &mut self.settings.color_scheme,
+                                            FractalColorScheme::RGB,
+                                            FractalColorScheme::RGB.to_string(),
+                                        );
+
+                                        ui.selectable_value(
+                                            &mut self.settings.color_scheme,
+                                            FractalColorScheme::HSV,
+                                            FractalColorScheme::HSV.to_string(),
+                                        );
+                                    });
                                 });
 
                                 if self.settings.color_scheme.contains(FractalColorScheme::RGB) {
@@ -296,13 +311,13 @@ impl FractalApp {
 
         if response.dragged_by(PointerButton::Secondary) {
             let drag_motion = response.drag_delta();
-            self.settings.initial_value_x -= drag_motion.x * scale;
-            self.settings.initial_value_y += drag_motion.y * scale;
+            self.settings.initial_value_x -= drag_motion.x * scale / 2.0;
+            self.settings.initial_value_y += drag_motion.y * scale / 2.0;
         }
 
         let scroll = ui.input(|i| i.raw_scroll_delta);
 
-        self.settings.zoom += self.settings.zoom * (scroll.y / 300.0).max(-0.9);
+        self.settings.zoom += self.settings.zoom * (scroll.y / 380.0).max(-0.9);
         let user_settings = &self.settings;
         let uniforms = Uniforms {
             max_iter: user_settings.max_iter,
@@ -321,7 +336,8 @@ impl FractalApp {
                 0.0,
                 0.0,
             ],
-            pad: [0; 12],
+            fractal_type: self.settings.fractal_type.bits(),
+            pad: [0; 8],
         };
         let callback = FvRenderCallback { uniforms };
 

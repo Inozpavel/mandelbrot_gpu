@@ -1,4 +1,4 @@
-use crate::uniforms::FractalColorScheme;
+use crate::uniforms::{FractalColorScheme, FractalType};
 
 pub struct UserSettings {
     pub max_iter: u32,
@@ -15,6 +15,7 @@ pub struct UserSettings {
     pub show_settings: bool,
     pub show_axis: bool,
     pub escape_threshold: f32,
+    pub fractal_type: FractalType,
 }
 
 impl UserSettings {
@@ -34,6 +35,7 @@ impl UserSettings {
             show_settings: true,
             show_axis: false,
             escape_threshold: 4.0,
+            fractal_type: FractalType::MANDELBROT,
         }
     }
 }

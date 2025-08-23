@@ -147,10 +147,18 @@ impl eframe::App for FractalApp {
 
                             ui.end_row();
 
+                            ui.heading("Степень");
+                            DragValue::new(&mut self.settings.pow)
+                                .speed(1)
+                                .range(2..=255)
+                                .ui(ui);
+
+                            ui.end_row();
+
                             ui.heading("Количество итераций");
                             DragValue::new(&mut self.settings.max_iter)
                                 .speed(1)
-                                .range(0..=255)
+                                .range(0..=1_000)
                                 .ui(ui);
 
                             ui.end_row();
@@ -337,7 +345,8 @@ impl FractalApp {
                 0.0,
             ],
             fractal_type: self.settings.fractal_type.bits(),
-            pad: [0; 8],
+            pow: self.settings.pow,
+            pad: [0; 4],
         };
         let callback = FvRenderCallback { uniforms };
 

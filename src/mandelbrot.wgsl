@@ -21,7 +21,8 @@ struct Params {
     hsv_brightness: f32,
     show_axis: u32,
     escape_threshold: f32,
-    fractal_type: u32
+    fractal_type: u32,
+    pow: u32
 }
 
 struct Complex {
@@ -31,6 +32,18 @@ struct Complex {
 
 fn norm_sqr(c: Complex) -> f32 {
     return c.re * c.re + c.im * c.im;
+}
+fn norm_sqrt(c: Complex) -> f32 {
+    return sqrt(norm_sqr(c));
+}
+
+fn complex_pow(c: Complex, n: u32) -> Complex {
+    var r = norm_sqrt(c);
+    let pow_degree = f32(n);
+    var theta = atan2(c.im, c.re);
+    var rn = pow(r, pow_degree);
+
+    return Complex(rn * cos(pow_degree * theta), rn * sin(pow_degree * theta));
 }
 
 fn mul(c1: Complex, c2: Complex) -> Complex {
@@ -59,9 +72,9 @@ fn escape_time(c: Complex, limit: u32) -> i32 {
         }
 
         if ((params.fractal_type & JULIA_FRACTAL_TYPE) > 0) {
-            z = sum(mul(z, z), constant);
+            z = sum(complex_pow(z, params.pow), constant);
         } else {
-            z = sum(mul(z, z), c);
+            z = sum(complex_pow(z, params.pow), c);
         }
     }
     return -1;
@@ -129,8 +142,8 @@ fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
 fn fs_main(in: VsOut) -> @location(0) vec4f {
     let center = Complex(params.center.x, params.center.y);
     let scale = params.zoom;
-    let x = (in.uv.x  - 0.5) / scale * 3.0;
-    let y = (in.uv.y  - 0.5) / scale * 2.0;
+    let x = (in.uv.x - 0.5)  / scale * 3.0;
+    let y = (in.uv.y - 0.5) / scale * 2.0;
 
     let current_point = Complex(x, y);
     let c = sum(center, current_point);

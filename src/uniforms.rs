@@ -17,7 +17,8 @@ pub struct Uniforms {
     pub show_axis: u32,          // 4
     pub escape_threshold: f32,   // 4
     pub fractal_type: u32,       // 4
-    pub pad: [u8; 8],            // 4
+    pub pow: u32,                // 4
+    pub pad: [u8; 4],
 }
 
 bitflags! {

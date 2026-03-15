@@ -10,14 +10,15 @@ use measure_time::debug_time;
 use std::time::Instant;
 
 const MAX_FRAMES_SAMPLES: usize = 200;
+
 pub struct FractalApp {
     settings: UserSettings,
     adapter_name: String,
     backend_name: String,
     driver_version: String,
     driver_name: String,
-    last_frame_time: Instant,
-    fps_samples: [f32; MAX_FRAMES_SAMPLES],
+    last_frame: Instant,
+    frame_delta_time_sec: f32,
     current_index: usize,
 }
 
@@ -43,8 +44,8 @@ impl FractalApp {
             backend_name,
             driver_version: adapter_info.driver_info.clone(),
             driver_name: adapter_info.driver.clone(),
-            last_frame_time: Instant::now(),
-            fps_samples: [0.0; 200],
+            last_frame: Instant::now(),
+            frame_delta_time_sec: 0.0,
             current_index: 0,
         }
     }
@@ -52,6 +53,10 @@ impl FractalApp {
 
 impl eframe::App for FractalApp {
     fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+        let now = Instant::now();
+        self.frame_delta_time_sec = now.duration_since(self.last_frame).as_secs_f32();
+        self.last_frame = now;
+
         debug_time!("Frame logic");
         if ctx.input(|state| state.key_pressed(Key::F1)) {
             self.settings.show_settings = !self.settings.show_settings;
@@ -100,10 +105,6 @@ impl eframe::App for FractalApp {
 
                             ui.end_row();
 
-                            let last_frame_elapsed = self.last_frame_time.elapsed();
-
-                            self.fps_samples[self.current_index] =
-                                last_frame_elapsed.as_secs_f32().recip();
                             self.current_index += 1;
 
                             if self.current_index >= MAX_FRAMES_SAMPLES {
@@ -112,14 +113,7 @@ impl eframe::App for FractalApp {
 
                             ui.heading("Среднее количество кадров в секунду");
 
-                            let avg = self.fps_samples.iter().sum::<f32>()
-                                / self.fps_samples.len() as f32;
-
-                            ui.label(format!("{avg:.0}"));
-                            ui.end_row();
-
-                            ui.heading("Время отрисовки последнего кадра");
-                            ui.label(format!("{last_frame_elapsed:?}"));
+                            ui.label(format!("{}", 1.0 / self.frame_delta_time_sec));
                             ui.end_row();
                         });
                 });
@@ -300,8 +294,6 @@ impl eframe::App for FractalApp {
                     ui.label("ПКМ + движение мыши - изменить начальное значение");
                 });
             });
-
-        self.last_frame_time = Instant::now();
     }
 }
 

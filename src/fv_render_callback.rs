@@ -1,4 +1,4 @@
-use crate::fv_renderer::FvRenderer;
+use crate::fv_renderer_resource::FvRendererResource;
 use crate::uniforms::Uniforms;
 use eframe::epaint::PaintCallbackInfo;
 use egui_wgpu::wgpu::RenderPass;
@@ -18,8 +18,15 @@ impl CallbackTrait for FvRenderCallback {
         _egui_encoder: &mut CommandEncoder,
         callback_resources: &mut CallbackResources,
     ) -> Vec<CommandBuffer> {
-        let renderer: &mut FvRenderer = callback_resources.get_mut().unwrap();
-        renderer.prepare(queue, self);
+        let resource = callback_resources
+            .get::<FvRendererResource>()
+            .expect("Missing FvRendererResource");
+
+        queue.write_buffer(
+            &resource.uniform_buffer,
+            0,
+            bytemuck::cast_slice(&[self.uniforms]),
+        );
         vec![]
     }
 
@@ -29,7 +36,12 @@ impl CallbackTrait for FvRenderCallback {
         render_pass: &mut RenderPass<'static>,
         callback_resources: &CallbackResources,
     ) {
-        let renderer: &FvRenderer = callback_resources.get().expect("Missing FvRenderer");
-        renderer.paint(render_pass);
+        let resource = callback_resources
+            .get::<FvRendererResource>()
+            .expect("Missing FvRendererResource");
+
+        render_pass.set_pipeline(&resource.pipeline);
+        render_pass.set_bind_group(0, &resource.bind_group, &[]);
+        render_pass.draw(0..6, 0..1);
     }
 }

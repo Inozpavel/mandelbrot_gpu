@@ -1,6 +1,5 @@
-use crate::app_state::AppState;
 use crate::fv_render_callback::FvRenderCallback;
-use crate::fv_renderer::FvRenderer;
+use crate::fv_renderer_resource::FvRendererResource;
 use crate::uniforms::{FractalColorScheme, FractalType, Uniforms};
 use crate::user_settings::UserSettings;
 use eframe::{CreationContext, Frame};
@@ -8,8 +7,6 @@ use egui::{Context, DragValue, Grid, Key, PointerButton, Slider, Ui, ViewportCom
 use log::info;
 use measure_time::debug_time;
 use std::time::Instant;
-
-const MAX_FRAMES_SAMPLES: usize = 200;
 
 pub struct FractalApp {
     settings: UserSettings,
@@ -19,20 +16,22 @@ pub struct FractalApp {
     driver_name: String,
     last_frame: Instant,
     frame_delta_time_sec: f32,
-    current_index: usize,
 }
 
 impl FractalApp {
     pub fn new(cc: &CreationContext) -> Self {
-        let wgpu_render_state = cc.wgpu_render_state.as_ref().expect("no wgpu_render_state");
-        let device = &wgpu_render_state.device;
-        let app_state = pollster::block_on(AppState::new(device, wgpu_render_state.target_format))
-            .expect("Failed to create app state");
+        let wgpu_render_state = cc
+            .wgpu_render_state
+            .as_ref()
+            .expect("Missing Wgpu render state");
+
+        let renderer_resource = FvRendererResource::new(wgpu_render_state);
+
         wgpu_render_state
             .renderer
             .write()
             .callback_resources
-            .insert(FvRenderer { state: app_state });
+            .insert(renderer_resource);
 
         let adapter_info = wgpu_render_state.adapter.get_info();
         let backend_name = format!("{}", adapter_info.backend);
@@ -46,7 +45,6 @@ impl FractalApp {
             driver_name: adapter_info.driver.clone(),
             last_frame: Instant::now(),
             frame_delta_time_sec: 0.0,
-            current_index: 0,
         }
     }
 }
@@ -104,12 +102,6 @@ impl eframe::App for FractalApp {
                             ));
 
                             ui.end_row();
-
-                            self.current_index += 1;
-
-                            if self.current_index >= MAX_FRAMES_SAMPLES {
-                                self.current_index = 0;
-                            }
 
                             ui.heading("Среднее количество кадров в секунду");
 

@@ -1,21 +1,22 @@
 use crate::uniforms::Uniforms;
+use egui_wgpu::RenderState;
 use wgpu::wgt::BufferDescriptor;
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device,
-    FragmentState, PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor,
-    ShaderStages, TextureFormat, VertexState, include_wgsl,
+    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, FragmentState,
+    PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexState,
+    include_wgsl,
 };
 
-pub struct AppState {
+pub struct FvRendererResource {
     pub bind_group: BindGroup,
     pub pipeline: RenderPipeline,
     pub uniform_buffer: Buffer,
-    pub format: TextureFormat,
 }
 
-impl AppState {
-    pub async fn new(device: &Device, format: TextureFormat) -> Result<Self, anyhow::Error> {
+impl FvRendererResource {
+    pub fn new(render_state: &RenderState) -> Self {
+        let device = &render_state.device;
         let uniform_buffer = device.create_buffer(&BufferDescriptor {
             label: Some("Params buffer"),
             size: size_of::<Uniforms>() as u64,
@@ -70,16 +71,15 @@ impl AppState {
                 module: &module,
                 entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
-                targets: &[Some(format.into())],
+                targets: &[Some(render_state.target_format.into())],
             }),
             multiview: None,
             cache: None,
         });
-        Ok(Self {
-            format,
+        Self {
             bind_group,
             uniform_buffer,
             pipeline,
-        })
+        }
     }
 }

@@ -51,8 +51,8 @@ impl FvRendererResource {
 
         let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
             label: Some("main pipeline descriptor"),
-            bind_group_layouts: &[&bind_group_layout],
-            push_constant_ranges: &[],
+            bind_group_layouts: &[Some(&bind_group_layout)],
+            immediate_size: 0,
         });
 
         let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
@@ -73,8 +73,8 @@ impl FvRendererResource {
                 compilation_options: Default::default(),
                 targets: &[Some(render_state.target_format.into())],
             }),
-            multiview: None,
             cache: None,
+            multiview_mask: None,
         });
         Self {
             bind_group,

@@ -1,6 +1,6 @@
 use eframe::NativeOptions;
 use egui::ViewportBuilder;
-use egui_wgpu::WgpuConfiguration;
+use egui_wgpu::{SurfaceConfig, WgpuConfiguration};
 use mandelbrot_gpu::fractal_app::FractalApp;
 use mimalloc::MiMalloc;
 use wgpu::PresentMode;
@@ -19,7 +19,10 @@ fn main() -> Result<(), eframe::Error> {
             .with_inner_size([width, height])
             .with_always_on_top(),
         wgpu_options: WgpuConfiguration {
-            present_mode: PresentMode::AutoVsync,
+            surface: SurfaceConfig {
+                present_mode: PresentMode::AutoVsync,
+                desired_maximum_frame_latency: None,
+            },
             ..Default::default()
         },
         ..Default::default()

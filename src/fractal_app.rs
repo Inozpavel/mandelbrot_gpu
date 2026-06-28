@@ -3,7 +3,7 @@ use crate::fv_renderer_resource::FvRendererResource;
 use crate::uniforms::{FractalColorScheme, FractalType, Uniforms};
 use crate::user_settings::UserSettings;
 use eframe::{CreationContext, Frame};
-use egui::{Context, DragValue, Grid, Key, PointerButton, Slider, Ui, ViewportCommand, Widget};
+use egui::{DragValue, Grid, Key, PointerButton, Slider, Ui, ViewportCommand, Widget};
 use log::info;
 use measure_time::debug_time;
 use std::time::Instant;
@@ -50,8 +50,9 @@ impl FractalApp {
 }
 
 impl eframe::App for FractalApp {
-    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+    fn ui(&mut self, ui: &mut Ui, frame: &mut Frame) {
         let now = Instant::now();
+        let ctx = ui.ctx();
         self.frame_delta_time_sec = now.duration_since(self.last_frame).as_secs_f32();
         self.last_frame = now;
 
@@ -64,14 +65,14 @@ impl eframe::App for FractalApp {
         {
             ctx.send_viewport_cmd(ViewportCommand::Fullscreen(!current_is_fullscreen))
         }
-        egui::CentralPanel::default().show(ctx, |ui| self.paint_fractal(ui, ctx, frame));
+        egui::CentralPanel::default().show(ui, |ui| self.paint_fractal(ui, frame));
 
         egui::Window::new("Информация и настройки")
             .open(&mut self.settings.show_settings)
             .movable(true)
             .default_pos([0.0, 0.0])
             .resizable(false)
-            .show(ctx, |ui| {
+            .show(ui.ctx(), |ui| {
                 ui.group(|ui| {
                     Grid::new("fractal")
                         .num_columns(2)
@@ -290,7 +291,7 @@ impl eframe::App for FractalApp {
 }
 
 impl FractalApp {
-    fn paint_fractal(&mut self, ui: &mut Ui, _ctx: &Context, _frame: &mut Frame) {
+    fn paint_fractal(&mut self, ui: &mut Ui, _frame: &mut Frame) {
         let size = ui.available_size().max(egui::vec2(400.0, 400.0));
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
 

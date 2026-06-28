@@ -294,27 +294,39 @@ impl FractalApp {
         let size = ui.available_size().max(egui::vec2(400.0, 400.0));
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
 
-        let scale = 4.0 / self.settings.zoom / size.min_elem();
+        let pixels_per_point = ui.ctx().pixels_per_point();
+
+        let width = rect.size().x * pixels_per_point;
+        let height = rect.size().y * pixels_per_point;
+        let aspect = width / height;
+
+        const SPEED: f32 = 2.0;
+
+        let scale_x = SPEED * aspect / self.settings.zoom / rect.width();
+        let scale_y = SPEED * 1.0 / self.settings.zoom / rect.height();
+        // let scale = 4.0 / self.settings.zoom / size.min_elem();
         if response.dragged_by(PointerButton::Primary) {
             let drag_motion = response.drag_delta();
-            self.settings.center_x -= drag_motion.x * scale;
-            self.settings.center_y += drag_motion.y * scale;
+            self.settings.center_x -= drag_motion.x * scale_x;
+            self.settings.center_y += drag_motion.y * scale_y;
         }
 
         if response.dragged_by(PointerButton::Secondary) {
             let drag_motion = response.drag_delta();
-            self.settings.initial_value_x -= drag_motion.x * scale / 2.0;
-            self.settings.initial_value_y += drag_motion.y * scale / 2.0;
+            self.settings.initial_value_x -= drag_motion.x * scale_x / 2.0;
+            self.settings.initial_value_y += drag_motion.y * scale_y / 2.0;
         }
 
-        let scroll = ui.input(|i| i.raw_scroll_delta);
+        let scroll = ui.input(|i| i.smooth_scroll_delta);
 
-        self.settings.zoom += self.settings.zoom * (scroll.y / 380.0).max(-0.9);
+        if scroll.y != 0.0 {
+            self.settings.zoom += self.settings.zoom * (scroll.y / 380.0).max(-0.9);
+        }
         let user_settings = &self.settings;
         let uniforms = Uniforms {
             max_iter: user_settings.max_iter,
             zoom: user_settings.zoom,
-            center: [user_settings.center_x, user_settings.center_y, 0.0, 0.0],
+            center: [user_settings.center_x, user_settings.center_y],
             rgb_green: user_settings.rgb_green,
             rgb_blue: user_settings.rgb_blue,
             color_scheme: self.settings.color_scheme.bits(),
@@ -322,15 +334,11 @@ impl FractalApp {
             hsv_brightness: self.settings.hsv_brightness,
             show_axis: self.settings.show_axis as u8 as u32,
             escape_threshold: self.settings.escape_threshold,
-            initial_value: [
-                self.settings.initial_value_x,
-                self.settings.initial_value_y,
-                0.0,
-                0.0,
-            ],
+            initial_value: [self.settings.initial_value_x, self.settings.initial_value_y],
             fractal_type: self.settings.fractal_type.bits(),
             pow: self.settings.pow,
-            pad: [0; 4],
+            resolution: [width, height],
+            _pad: [0; 4],
         };
         let callback = FvRenderCallback { uniforms };
 

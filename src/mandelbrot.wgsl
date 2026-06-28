@@ -1,4 +1,4 @@
-@group(0) @binding(0) var <uniform> params: Params;
+@group(0) @binding(0) var <uniform> uniforms: Uniforms;
 
 const RGB_SCHEME: u32 = 1;
 const HSV_SCHEME: u32 = 2;
@@ -9,9 +9,10 @@ const AXIS_EPSILON: f32 = 0.005;
 const JULIA_FRACTAL_TYPE: u32 = 2;
 const MANDELBROT_FRACTAL_TYPE: u32 = 1;
 
-struct Params {
-    center: vec4f, // 2 points
-    initial_value: vec4f, // 2 points
+struct Uniforms {
+    center: vec2f,
+    initial_value: vec2f,
+    resolution: vec2f,
     max_iter: u32,
     zoom: f32,
     rgb_green: f32,
@@ -55,10 +56,10 @@ fn sum(c1: Complex, c2: Complex) -> Complex {
 }
 
 fn escape_time(c: Complex, limit: u32) -> i32 {
-    let constant = Complex(params.initial_value.x, params.initial_value.y);
+    let constant = Complex(uniforms.initial_value.x, uniforms.initial_value.y);
     var z: Complex;
 
-    if ((params.fractal_type & JULIA_FRACTAL_TYPE) > 0) {
+    if ((uniforms.fractal_type & JULIA_FRACTAL_TYPE) > 0) {
         z = c;
     } else {
         z = constant;
@@ -67,14 +68,14 @@ fn escape_time(c: Complex, limit: u32) -> i32 {
     for (var i: i32 = 0; i < l; i++) {
         let z_sqrt = norm_sqr(z);
 
-        if z_sqrt > params.escape_threshold {
+        if z_sqrt > uniforms.escape_threshold {
             return i;
         }
 
-        if ((params.fractal_type & JULIA_FRACTAL_TYPE) > 0) {
-            z = sum(complex_pow(z, params.pow), constant);
+        if ((uniforms.fractal_type & JULIA_FRACTAL_TYPE) > 0) {
+            z = sum(complex_pow(z, uniforms.pow), constant);
         } else {
-            z = sum(complex_pow(z, params.pow), c);
+            z = sum(complex_pow(z, uniforms.pow), c);
         }
     }
     return -1;
@@ -140,15 +141,19 @@ fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
-    let center = Complex(params.center.x, params.center.y);
-    let scale = params.zoom;
-    let x = (in.uv.x - 0.5)  / scale * 3.0;
-    let y = (in.uv.y - 0.5) / scale * 2.0;
+    var uv = in.uv;
+    let aspect = uniforms.resolution.x / uniforms.resolution.y;
+    let scale = uniforms.zoom;
+
+    let x = (uv.x - 0.5) * aspect / scale;
+    let y = (uv.y - 0.5) / scale;
+
+    let center = Complex(uniforms.center.x, uniforms.center.y);
 
     let current_point = Complex(x, y);
     let c = sum(center, current_point);
 
-    if ((params.show_axis & 1) > 0) {
+    if ((uniforms.show_axis & 1) > 0) {
         let scaled_epsilon = EPSILON / scale;
         let scaled_axis_epsilon = AXIS_EPSILON / scale;
         let axis_epsilon = scaled_epsilon * 25;
@@ -164,20 +169,20 @@ fn fs_main(in: VsOut) -> @location(0) vec4f {
         }
     }
 
-    let time = escape_time(c, params.max_iter);
+    let time = escape_time(c, uniforms.max_iter);
 
     if (time == -1) {
         return vec4(0.0, 0.0, 0.0, 1.0);
     }
 
-    if ((params.color_scheme & HSV_SCHEME) > 0) {
-        let color = log(f32(time) + 1) / log(f32(params.max_iter) + 1);
-        let colors = vec3f(color, params.hsv_saturation, params.hsv_brightness);
+    if ((uniforms.color_scheme & HSV_SCHEME) > 0) {
+        let color = log(f32(time) + 1) / log(f32(uniforms.max_iter) + 1);
+        let colors = vec3f(color, uniforms.hsv_saturation, uniforms.hsv_brightness);
         return vec4f(hsv_rgb(colors), 1.0);
     }
     else {
-        let color = f32(time) / f32(params.max_iter);
-        let colors = vec3f(color, params.rgb_green, params.rgb_blue);
+        let color = f32(time) / f32(uniforms.max_iter);
+        let colors = vec3f(color, uniforms.rgb_green, uniforms.rgb_blue);
         return vec4f(colors, 1.0);
     }
 }

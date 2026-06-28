@@ -5,8 +5,9 @@ use std::fmt::{Display, Formatter};
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 pub struct Uniforms {
-    pub center: [f32; 4],        // 2 points, 16
-    pub initial_value: [f32; 4], // 2 points, 16
+    pub center: [f32; 2],        // 8, 8
+    pub initial_value: [f32; 2], // 8, 8
+    pub resolution: [f32; 2],    // 8, 8
     pub max_iter: u32,           // 4
     pub zoom: f32,               // 4
     pub rgb_green: f32,          // 4
@@ -18,7 +19,7 @@ pub struct Uniforms {
     pub escape_threshold: f32,   // 4
     pub fractal_type: u32,       // 4
     pub pow: u32,                // 4
-    pub pad: [u8; 4],
+    pub _pad: [u8; 4],           // 4
 }
 
 bitflags! {

@@ -9,6 +9,8 @@ const AXIS_EPSILON: f32 = 0.005;
 const JULIA_FRACTAL_TYPE: u32 = 2;
 const MANDELBROT_FRACTAL_TYPE: u32 = 1;
 
+const MIN_DRAW_LINE_MULTIPLIER = 2.0;
+
 struct Uniforms {
     center: vec2f,
     initial_value: vec2f,
@@ -86,62 +88,28 @@ struct VsOut {
     @location(0) uv: vec2<f32>
 }
 
-fn hsv_rgb(hsv: vec3<f32>) -> vec3<f32> {
-    if (hsv.y == 0.0) {
-        return vec3<f32>(hsv.z, hsv.z, hsv.z);
-    } else {
-        var hp: f32 = hsv.x * 6.0;
-        if (hp == 6.0) {
-            hp = 0.0;
-        }
-        let hpi: i32 = i32(hp);
-        let v1: f32 = hsv.z * (1.0 - hsv.y);
-        let v2: f32 = hsv.z * (1.0 - hsv.y * (hp - f32(hpi)));
-        let v3: f32 = hsv.z * (1.0 - hsv.y * (1.0 - (hp - f32(hpi))));
-        switch (hpi) {
-            case 0: {
-                return vec3<f32>(hsv.z, v3, v1);
-            }
-            case 1: {
-                return vec3<f32>(v2, hsv.z, v1);
-            }
-            case 2: {
-                return vec3<f32>(v1, hsv.z, v3);
-            }
-            case 3: {
-                return vec3<f32>(v1, v2, hsv.z);
-            }
-            case 4: {
-                return vec3<f32>(v3, v1, hsv.z);
-            }
-            default: {
-                return vec3<f32>(hsv.z, v1, v2);
-            }
-        }
-    }
+fn hsv2rgb(c: vec3f) -> vec3f {
+    var rgb = clamp(
+        abs(((vec3f(c.x) * 6.0 + vec3f(0.0, 4.0, 2.0)) % 6.0) - 3.0) - 1.0,
+        vec3f(0.0),
+        vec3f(1.0)
+    );
+    rgb = rgb * rgb * (vec3f(3.0) - 2.0 * rgb);
+    return c.z * mix(vec3f(1.0), rgb, c.y);
 }
 
 @vertex
 fn vs_main(@builtin(vertex_index) index: u32) -> VsOut {
-    var pos = array<vec2f, 6>(
-        vec2f(-1.0, -1.0),
-        vec2f(-1.0,  1.0),
-        vec2f(1.0,  1.0),
-        vec2f(1.0,  1.0),
-        vec2f(1.0,  -1.0),
-        vec2f(-1.0,  -1.0)
-    );
-    var out: VsOut;
-    let position = pos[index];
-
-    out.position = vec4f(position, 0.0, 1.0);
-    out.uv = (position + vec2f(1.0, 1.0)) * 0.5; // normalization in [0..=1]
-    return out;
+    // Fullscreen triangle. Constructed in a single expression
+    let x = f32(i32(index & 1u) * 4 - 1);
+    let y = f32(i32(index >> 1u) * 4 - 1);
+    return VsOut(vec4f(x, y, 0.0, 1.0), vec2f(x, y) * 0.5 + 0.5);
 }
 
 @fragment
 fn fs_main(in: VsOut) -> @location(0) vec4f {
     var uv = in.uv;
+
     let aspect = uniforms.resolution.x / uniforms.resolution.y;
     let scale = uniforms.zoom;
 
@@ -153,36 +121,75 @@ fn fs_main(in: VsOut) -> @location(0) vec4f {
     let current_point = Complex(x, y);
     let c = sum(center, current_point);
 
-    if ((uniforms.show_axis & 1) > 0) {
-        let scaled_epsilon = EPSILON / scale;
-        let scaled_axis_epsilon = AXIS_EPSILON / scale;
-        let axis_epsilon = scaled_epsilon * 25;
-
-        if (abs(c.im) >= axis_epsilon && abs(abs(c.im) - abs(floor(c.im))) <= scaled_axis_epsilon && abs(c.re) <= axis_epsilon) {
-            return vec4f(255, 255, 255, 0);
-        }
-        if (abs(c.re) >= axis_epsilon && abs(abs(c.re) - abs(floor(c.re))) <= scaled_axis_epsilon && abs(c.im) <= axis_epsilon) {
-            return vec4f(255, 255, 255, 0);
-        }
-        if (abs(c.re) <= scaled_epsilon || abs(c.im) <= scaled_epsilon) {
-            return vec4f(255, 255, 255, 0);
-        }
-    }
+    var rgb = vec3f(0.0);
+    let axis_color = vec3f(1.0);
 
     let time = escape_time(c, uniforms.max_iter);
 
-    if (time == -1) {
-        return vec4(0.0, 0.0, 0.0, 1.0);
+    if (time != -1) {
+        if ((uniforms.color_scheme & HSV_SCHEME) > 0) {
+            let color = log(f32(time) + 1) / log(f32(uniforms.max_iter) + 1);
+            let colors = vec3f(color, uniforms.hsv_saturation, uniforms.hsv_brightness);
+            rgb = hsv2rgb(colors);
+        }
+        else {
+            let color = f32(time) / f32(uniforms.max_iter);
+            let colors = vec3f(color, uniforms.rgb_green, uniforms.rgb_blue);
+            rgb = colors;
+        }
     }
 
-    if ((uniforms.color_scheme & HSV_SCHEME) > 0) {
-        let color = log(f32(time) + 1) / log(f32(uniforms.max_iter) + 1);
-        let colors = vec3f(color, uniforms.hsv_saturation, uniforms.hsv_brightness);
-        return vec4f(hsv_rgb(colors), 1.0);
+    if ((uniforms.show_axis & 1) > 0) {
+        let x = c.re;
+        let y = c.im;
+        let blur_x = fwidth(x) * MIN_DRAW_LINE_MULTIPLIER;
+        let blur_y = fwidth(y) * MIN_DRAW_LINE_MULTIPLIER;
+        let x_axis_mask = plot(0.0, x, blur_x);
+        let y_axis_mask = plot(0.0, y, blur_y);
+
+        let width = fwidth(x) * 15;
+        let len = fwidth(y) * 1.5;
+        let blur = 0.00001;
+        let y_ticks_mask = axis_ticks_mask(x, y, blur_x, width, len);
+        let x_ticks_mask = axis_ticks_mask(y, x, blur_y, width, len);
+        rgb = mix(rgb, axis_color, x_axis_mask);
+        rgb = mix(rgb, axis_color, y_axis_mask);
+        rgb = mix(rgb, axis_color, y_ticks_mask);
+        rgb = mix(rgb, axis_color, x_ticks_mask);
     }
-    else {
-        let color = f32(time) / f32(uniforms.max_iter);
-        let colors = vec3f(color, uniforms.rgb_green, uniforms.rgb_blue);
-        return vec4f(colors, 1.0);
-    }
+
+    return vec4f(rgb, 1.0);
+}
+
+fn plot(target_value: f32, current: f32, blur: f32) -> f32 {
+    let b = max(blur, fwidth(current) * MIN_DRAW_LINE_MULTIPLIER);
+    return saturate(smoothstep(target_value - b, target_value, current) * smoothstep(target_value + b, target_value, current));
+}
+
+fn strip_mask(a: f32, b: f32, current: f32, blur: f32) -> f32 {
+    let half_width = (b - a) * 0.5;
+    let aa = clamp(max(fwidth(current) * MIN_DRAW_LINE_MULTIPLIER, blur), 0.0, half_width * 0.9);
+   let result = smoothstep(a - aa, a, current) * smoothstep(b + aa, b, current);
+
+    return saturate(result);
+}
+
+fn triangle_mask(coordinades: vec4f, current: vec2f, blur: f32) -> f32 {
+    let x = strip_mask(coordinades.x, coordinades.y, current.x, blur);
+    let y = strip_mask(coordinades.z, coordinades.w, current.y, blur);
+    let result = x * y;
+    return saturate(result);
+}
+
+fn axis_ticks_mask(current: f32, across: f32, blur: f32, width: f32, len: f32) -> f32 {
+    var local = fract(current + 0.5) - 0.5;
+
+    let aa = max(fwidth(current) * MIN_DRAW_LINE_MULTIPLIER, blur);
+    let aa_len = len;
+    let aa_width = width;
+
+    let width_mask = strip_mask(-aa_width, aa_width, across, aa);
+    let len_mask = strip_mask(-aa_len, aa_len, local, aa);
+
+    return width_mask * len_mask;
 }
